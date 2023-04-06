@@ -1,5 +1,5 @@
 import { useDebouncedCallback } from "use-debounce";
-import { memo, useState, useRef, useEffect, useLayoutEffect } from "react";
+import { useState, useRef, useEffect, useLayoutEffect } from "react";
 
 import SendWhiteIcon from "../icons/send-white.svg";
 import BrainIcon from "../icons/brain.svg";
@@ -12,19 +12,11 @@ import BotIcon from "../icons/bot.svg";
 import AddIcon from "../icons/add.svg";
 import DeleteIcon from "../icons/delete.svg";
 
-import {
-  Message,
-  SubmitKey,
-  useChatStore,
-  BOT_HELLO,
-  ROLES,
-  createMessage,
-} from "../store";
+import { Message, SubmitKey, useChatStore, BOT_HELLO, ROLES } from "../store";
 
 import {
   copyToClipboard,
   downloadAs,
-  getEmojiUrl,
   isMobileScreen,
   selectOrCopy,
 } from "../utils";
@@ -39,14 +31,11 @@ import { IconButton } from "./button";
 import styles from "./home.module.scss";
 import chatStyle from "./chat.module.scss";
 
-import { Input, Modal, showModal, showToast } from "./ui-lib";
+import { Modal, showModal, showToast } from "./ui-lib";
 
-const Markdown = dynamic(
-  async () => memo((await import("./markdown")).Markdown),
-  {
-    loading: () => <LoadingIcon />,
-  },
-);
+const Markdown = dynamic(async () => (await import("./markdown")).Markdown, {
+  loading: () => <LoadingIcon />,
+});
 
 const Emoji = dynamic(async () => (await import("emoji-picker-react")).Emoji, {
   loading: () => <LoadingIcon />,
@@ -61,7 +50,7 @@ export function Avatar(props: { role: Message["role"] }) {
 
   return (
     <div className={styles["user-avtar"]}>
-      <Emoji unified={config.avatar} size={18} getEmojiUrl={getEmojiUrl} />
+      <Emoji unified={config.avatar} size={18} />
     </div>
   );
 }
@@ -71,9 +60,7 @@ function exportMessages(messages: Message[], topic: string) {
     `# ${topic}\n\n` +
     messages
       .map((m) => {
-        return m.role === "user"
-          ? `## ${Locale.Export.MessageFromYou}:\n${m.content}`
-          : `## ${Locale.Export.MessageFromChatGPT}:\n${m.content.trim()}`;
+        return m.role === "user" ? `## ${m.content}` : m.content.trim();
       })
       .join("\n\n");
   const filename = `${topic}.md`;
@@ -152,16 +139,6 @@ function PromptToast(props: {
             onClose={() => props.setShowModal(false)}
             actions={[
               <IconButton
-                key="reset"
-                icon={<CopyIcon />}
-                bordered
-                text={Locale.Memory.Reset}
-                onClick={() =>
-                  confirm(Locale.Memory.ResetConfirm) &&
-                  chatStore.resetSession()
-                }
-              />,
-              <IconButton
                 key="copy"
                 icon={<CopyIcon />}
                 bordered
@@ -171,6 +148,7 @@ function PromptToast(props: {
             ]}
           >
             <>
+              {" "}
               <div className={chatStyle["context-prompt"]}>
                 {context.map((c, i) => (
                   <div className={chatStyle["context-prompt-row"]} key={i}>
@@ -190,18 +168,17 @@ function PromptToast(props: {
                         </option>
                       ))}
                     </select>
-                    <Input
+                    <input
                       value={c.content}
                       type="text"
                       className={chatStyle["context-content"]}
-                      rows={1}
-                      onInput={(e) =>
+                      onChange={(e) =>
                         updateContextPrompt(i, {
                           ...c,
-                          content: e.currentTarget.value as any,
+                          content: e.target.value as any,
                         })
                       }
-                    />
+                    ></input>
                     <IconButton
                       icon={<DeleteIcon />}
                       className={chatStyle["context-delete-button"]}
@@ -229,24 +206,8 @@ function PromptToast(props: {
               </div>
               <div className={chatStyle["memory-prompt"]}>
                 <div className={chatStyle["memory-prompt-title"]}>
-                  <span>
-                    {Locale.Memory.Title} ({session.lastSummarizeIndex} of{" "}
-                    {session.messages.length})
-                  </span>
-
-                  <label className={chatStyle["memory-prompt-action"]}>
-                    {Locale.Memory.Send}
-                    <input
-                      type="checkbox"
-                      checked={session.sendMemory}
-                      onChange={() =>
-                        chatStore.updateCurrentSession(
-                          (session) =>
-                            (session.sendMemory = !session.sendMemory),
-                        )
-                      }
-                    ></input>
-                  </label>
+                  {Locale.Memory.Title} ({session.lastSummarizeIndex} of{" "}
+                  {session.messages.length})
                 </div>
                 <div className={chatStyle["memory-prompt-content"]}>
                   {session.memoryPrompt || Locale.Memory.EmptyContent}
@@ -414,8 +375,8 @@ export function Chat(props: {
   };
 
   // stop response
-  const onUserStop = (messageId: number) => {
-    ControllerPool.stop(sessionIndex, messageId);
+  const onUserStop = (messageIndex: number) => {
+    ControllerPool.stop(sessionIndex, messageIndex);
   };
 
   // check if should send message
@@ -445,9 +406,6 @@ export function Chat(props: {
         chatStore
           .onUserInput(messages[i].content)
           .then(() => setIsLoading(false));
-        chatStore.updateCurrentSession((session) =>
-          session.messages.splice(i, 2),
-        );
         inputRef.current?.focus();
         return;
       }
@@ -472,10 +430,9 @@ export function Chat(props: {
       isLoading
         ? [
             {
-              ...createMessage({
-                role: "assistant",
-                content: "……",
-              }),
+              role: "assistant",
+              content: "……",
+              date: new Date().toLocaleString(),
               preview: true,
             },
           ]
@@ -485,10 +442,9 @@ export function Chat(props: {
       userInput.length > 0 && config.sendPreviewBubble
         ? [
             {
-              ...createMessage({
-                role: "user",
-                content: userInput,
-              }),
+              role: "user",
+              content: userInput,
+              date: new Date().toLocaleString(),
               preview: true,
             },
           ]
@@ -501,7 +457,6 @@ export function Chat(props: {
   useEffect(() => {
     if (props.sideBarShowing && isMobileScreen()) return;
     inputRef.current?.focus();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
@@ -605,7 +560,7 @@ export function Chat(props: {
                         {message.streaming ? (
                           <div
                             className={styles["chat-message-top-action"]}
-                            onClick={() => onUserStop(message.id ?? i)}
+                            onClick={() => onUserStop(i)}
                           >
                             {Locale.Chat.Actions.Stop}
                           </div>

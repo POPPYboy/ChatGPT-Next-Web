@@ -35,17 +35,11 @@ const en: LocaleType = {
     Title: "All Messages",
     Copy: "Copy All",
     Download: "Download",
-    MessageFromYou: "Message From You",
-    MessageFromChatGPT: "Message From ChatGPT",
   },
   Memory: {
     Title: "Memory Prompt",
     EmptyContent: "Nothing yet.",
-    Send: "Send Memory",
-    Copy: "Copy Memory",
-    Reset: "Reset Session",
-    ResetConfirm:
-      "Resetting will clear the current conversation history and historical memory. Are you sure you want to reset?",
+    Copy: "Copy All",
   },
   Home: {
     NewChat: "New Chat",
@@ -112,8 +106,8 @@ const en: LocaleType = {
     },
     Usage: {
       Title: "Account Balance",
-      SubTitle(used: any, total: any) {
-        return `Used this month $${used}, subscription $${total}`;
+      SubTitle(used: any) {
+        return `Used this month $${used}`;
       },
       IsChecking: "Checking...",
       Check: "Check Again",

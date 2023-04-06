@@ -2,7 +2,6 @@ import styles from "./ui-lib.module.scss";
 import LoadingIcon from "../icons/three-dots.svg";
 import CloseIcon from "../icons/close.svg";
 import { createRoot } from "react-dom/client";
-import React from "react";
 
 export function Popover(props: {
   children: JSX.Element;
@@ -140,18 +139,4 @@ export function showToast(content: string, delay = 3000) {
   }, delay);
 
   root.render(<Toast content={content} />);
-}
-
-export type InputProps = React.HTMLProps<HTMLTextAreaElement> & {
-  autoHeight?: boolean;
-  rows?: number;
-};
-
-export function Input(props: InputProps) {
-  return (
-    <textarea
-      {...props}
-      className={`${styles["input"]} ${props.className}`}
-    ></textarea>
-  );
 }
